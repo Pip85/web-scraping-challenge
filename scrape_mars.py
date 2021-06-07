@@ -10,104 +10,115 @@
 # Import modules for use in webscraping:
 import pandas as pd
 from bs4 import BeautifulSoup as bs
-import requests
 from splinter import Browser
 from webdriver_manager.chrome import ChromeDriverManager
 
-# Setup for working with Browser:
-executable_path = {'executable_path': ChromeDriverManager().install()}
-browser = Browser('chrome', **executable_path, headless=False)
+def scrape():
+    # Setup for working with Browser:
+    executable_path = {'executable_path': ChromeDriverManager().install()}
+    browser = Browser('chrome', **executable_path, headless=False)
 
-# ## Latest News - Mars Mission
+    # ## Latest News - Mars Mission
 
-# URL for news on Mars Mission
-rps_url = "https://redplanetscience.com/"
+    # URL for news on Mars Mission
+    rps_url = "https://redplanetscience.com/"
 
-# Use Browser to pull html data and use beautiful soup to parse the data
-browser.visit(rps_url)
-rps_html = browser.html
-rps_soup = bs(rps_html, "html.parser")
+    # Use Browser to pull html data and use beautiful soup to parse the data
+    browser.visit(rps_url)
+    rps_html = browser.html
+    rps_soup = bs(rps_html, "html.parser")
 
-# Search parsed soup file for latest news title and snippet
-news_title = rps_soup.find("div", class_="content_title").text
-news_teaser = rps_soup.find("div", class_ = "article_teaser_body").text
+    # Search parsed soup file for latest news title and snippet
+    news_title = rps_soup.find("div", class_="content_title").text
+    news_teaser = rps_soup.find("div", class_ = "article_teaser_body").text
 
-# ## Capture Mars image
+    # ## Capture Mars image
 
-# URL for JPL site housing image of Mars
-jpl_url = "https://spaceimages-mars.com/"
+    # URL for JPL site housing image of Mars
+    jpl_url = "https://spaceimages-mars.com/"
 
-# Use Browser to pull html data and use beautiful soup to parse the data
-browser.visit(jpl_url)
-jpl_html = browser.html
-jpl_soup = bs(jpl_html, "html.parser")
+    # Use Browser to pull html data and use beautiful soup to parse the data
+    browser.visit(jpl_url)
+    jpl_html = browser.html
+    jpl_soup = bs(jpl_html, "html.parser")
 
-# Search parsed soup file for html containing Mars image
-jpl_find_img = jpl_soup.find_all("img", "headerimage")
+    # Search parsed soup file for html containing Mars image
+    jpl_find_img = jpl_soup.find_all("img", "headerimage")
 
-# Loop through header data to find the url link of of the image
-for img in jpl_find_img:
-    jpl_img = img["src"]
+    # Loop through header data to find the url link of of the image
+    for img in jpl_find_img:
+        jpl_img = img["src"]
 
-# Establish variable to hold the image url    
-featured_image_url = jpl_url + jpl_img
+    # Establish variable to hold the image url    
+    featured_image_url = jpl_url + jpl_img
 
-# ## Mars Facts
+    # ## Mars Facts
 
-# URL for facts about Mars
-facts_url = "https://galaxyfacts-mars.com"
+    # URL for facts about Mars
+    facts_url = "https://galaxyfacts-mars.com"
 
-# Read html from url into variable
-table = pd.read_html(facts_url)
+    # Read html from url into variable
+    table = pd.read_html(facts_url)
 
-# Create data frame from html data
-facts_df = table[0]
+    # Create data frame from html data
+    facts_df = table[0]
 
-# Convert dataframe to html
-facts_table = facts_df.to_html()
+    # Convert first row to column headers
+    header_row = 0
+    facts_df.columns = facts_df.iloc[header_row]
+    facts_df = facts_df.drop(header_row)
 
-# Remove new line code from table
-facts_table = facts_table.replace("\n", " ")
+    # Rename first column
+    facts_df=facts_df.rename(columns = {'Mars - Earth Comparison':'Description'})
 
-# Create html file from dataframe:
-facts_df.to_html("facts_html", index=False)
+    # Set index to first column
+    facts_df.set_index("Description", inplace = True)
 
-# ## Mars Hemispheres
+    # Convert dataframe to html
+    facts_table = facts_df.to_html()
 
-# URL for images of Mars hemispheres
-hem_url = "https://marshemispheres.com/"
+    # Remove new line code from table
+    facts_table = facts_table.replace("\n", " ")
 
-# Use Browser to pull html data and use beautiful soup to parse the data
-browser.visit(hem_url)
-hem_html = browser.html
-hem_soup = bs(hem_html, "html.parser")
+    # Create html file from dataframe:
+    facts_df.to_html("facts_html", index=False)
 
-# Search soup file for section containing hemisphere titles and html's for images
-hem_find = hem_soup.find_all("div", class_ = "item")
+    # ## Mars Hemispheres
 
-# Setup for loop to pull the hemisphere titles from H3 header data
-# For loop pulls html links for each hemisphere's page
-# Image link from each hemisphere page is pulled
-# Hemisphere title and image url are stored in a dictionary
-hemisphere_image_urls = []
+    # URL for images of Mars hemispheres
+    hem_url = "https://marshemispheres.com/"
 
-for item in hem_find:
-    title = item.find("h3").text
-    link = item.find("a", class_ = "itemLink")["href"]
-    hemi_url = hem_url + link
-    browser.visit(hemi_url)
-    hemi_url_html = browser.html
-    hemi_soup = bs(hemi_url_html, "html.parser")
-    img = hem_url + hemi_soup.find("img", class_ = "wide-image")["src"]
-    hemisphere_image_urls.append({"img_url": img, "title": title})
+    # Use Browser to pull html data and use beautiful soup to parse the data
+    browser.visit(hem_url)
+    hem_html = browser.html
+    hem_soup = bs(hem_html, "html.parser")
 
-mars_info = {
-    "news_title": news_title,
-    "news_teaser": news_teaser,
-    "mars_image": featured_image_url,
-    "mars_facts": facts_table,
-    "mars_hemispheres": hemisphere_image_urls
-}
+    # Search soup file for section containing hemisphere titles and html's for images
+    hem_find = hem_soup.find_all("div", class_ = "item")
 
-browser.quit()
-print(mars_info)
+    # Setup for loop to pull the hemisphere titles from H3 header data
+    # For loop pulls html links for each hemisphere's page
+    # Image link from each hemisphere page is pulled
+    # Hemisphere title and image url are stored in a dictionary
+    hemisphere_image_urls = []
+
+    for item in hem_find:
+        title = item.find("h3").text
+        link = item.find("a", class_ = "itemLink")["href"]
+        hemi_url = hem_url + link
+        browser.visit(hemi_url)
+        hemi_url_html = browser.html
+        hemi_soup = bs(hemi_url_html, "html.parser")
+        img = hem_url + hemi_soup.find("img", class_ = "wide-image")["src"]
+        hemisphere_image_urls.append({"img_url": img, "title": title})
+    mars_info = {
+                "news_title": news_title,
+                "news_teaser": news_teaser,
+                "mars_image": featured_image_url,
+                "mars_facts": facts_table,
+                "mars_hemispheres": hemisphere_image_urls
+            }
+    
+    browser.quit()
+    return mars_info
+
