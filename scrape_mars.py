@@ -42,16 +42,17 @@ def scrape():
     jpl_html = browser.html
     jpl_soup = bs(jpl_html, "html.parser")
 
-    # Search parsed soup file for html containing Mars image
-    jpl_find_img = jpl_soup.find_all("img", "headerimage")
+    # Search parsed soup file for html containing Mars Featured Image
+    jpl_find = jpl_soup.find_all("div", class_="floating_text_area")
 
-    # Loop through header data to find the url link of of the image
-    for img in jpl_find_img:
-        jpl_img = img["src"]
-
-    # Establish variable to hold the image url    
-    featured_image_url = jpl_url + jpl_img
-
+    # Find image url within jpl_find
+    for item in jpl_find:
+        a = item.find("a")  
+        href = a["href"]
+        
+    # Establish variable to hold the image url        
+    featured_image_url = jpl_url + href
+    
     # ## Mars Facts
 
     # URL for facts about Mars
@@ -74,8 +75,12 @@ def scrape():
     # Set index to first column
     facts_df.set_index("Description", inplace = True)
 
+    # TODO - Correct in JN from line 
     # Convert dataframe to html
-    facts_table = facts_df.to_html()
+    facts_table = facts_df.to_html(
+        table_id="facts_table", 
+        justify="center",
+        classes="table table-striped table-bordered border border-dark")
 
     # Remove new line code from table
     facts_table = facts_table.replace("\n", " ")
@@ -111,14 +116,15 @@ def scrape():
         hemi_soup = bs(hemi_url_html, "html.parser")
         img = hem_url + hemi_soup.find("img", class_ = "wide-image")["src"]
         hemisphere_image_urls.append({"img_url": img, "title": title})
-    mars_info = {
-                "news_title": news_title,
-                "news_teaser": news_teaser,
-                "mars_image": featured_image_url,
-                "mars_facts": facts_table,
-                "mars_hemispheres": hemisphere_image_urls
-            }
-    
+
+        mars_info = {
+                    "news_title": news_title,
+                    "news_teaser": news_teaser,
+                    "mars_image": featured_image_url,
+                    "mars_facts": facts_table,
+                    "mars_hemispheres": hemisphere_image_urls
+                     }
     browser.quit()
+
     return mars_info
 
