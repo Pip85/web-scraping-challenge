@@ -115,7 +115,7 @@ def scrape():
         hemi_url_html = browser.html
         hemi_soup = bs(hemi_url_html, "html.parser")
         img = hem_url + hemi_soup.find("img", class_ = "wide-image")["src"]
-        hemisphere_image_urls.append({"img_url": img, "title": title})
+        hemisphere_image_urls.append({"title": title, "img_url": img, })
 
         mars_info = {
                     "news_title": news_title,
